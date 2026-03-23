@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How I Built an AI Second Brain on a $200 Home Server — The Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+  .page-break { page-break-before: always; }
+  pre { border: 1px solid #ccc !important; background: #f5f5f5 !important; }
+  a { color: #111 !important; text-decoration: underline !important; }
+}
+
+:root {
+  --bg: #0c0c0e;
+  --card: #141418;
+  --border: #252530;
+  --text: #e4e2de;
+  --text2: #8e8e94;
+  --green: #22c55e;
+  --accent: #818cf8;
+  --code-bg: #1a1a22;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+}
+
+.guide {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 60px 32px 100px;
+}
+
+/* Cover */
+.cover {
+  padding: 80px 0 60px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 60px;
+}
+
+.cover-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--green);
+  margin-bottom: 20px;
+}
+
+.cover h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+.cover h1 em {
+  color: var(--green);
+  font-style: italic;
+}
+
+.cover-sub {
+  font-size: 1.15rem;
+  color: var(--text2);
+  max-width: 560px;
+  margin-bottom: 32px;
+}
+
+.cover-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.cover-meta span { color: var(--text); }
+
+/* TOC */
+.toc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px;
+  margin-bottom: 60px;
+}
+
+.toc h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 16px;
+}
+
+.toc ol {
+  list-style: none;
+  counter-reset: toc;
+}
+
+.toc li {
+  counter-increment: toc;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.95rem;
+}
+
+.toc li:last-child { border-bottom: none; }
+
+.toc li::before {
+  content: "0" counter(toc);
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--accent);
+  margin-right: 14px;
+  font-size: 13px;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 56px;
+}
+
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 28px 0 12px;
+  color: var(--text);
+}
+
+p { margin-bottom: 16px; color: var(--text); font-size: 0.98rem; }
+p + p { margin-top: 0; }
+
+strong { color: var(--text); }
+
+/* Code */
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  margin: 20px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c4c4cc;
+}
+
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88em;
+  background: rgba(129, 140, 248, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.comment { color: #5c6370; }
+.string { color: #98c379; }
+.keyword { color: #c678dd; }
+
+/* Callouts */
+.callout {
+  background: var(--card);
+  border-left: 3px solid var(--green);
+  border-radius: 0 10px 10px 0;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+
+.callout.warning { border-left-color: #f59e0b; }
+.callout.info { border-left-color: var(--accent); }
+
+.callout-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.callout.warning .callout-title { color: #f59e0b; }
+.callout.info .callout-title { color: var(--accent); }
+
+/* Architecture diagram */
+.arch-diagram {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px;
+  margin: 24px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text2);
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+
+th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text2);
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+/* File tree */
+.file-tree {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text2);
+  margin: 20px 0;
+}
+
+.file-tree .dir { color: var(--accent); }
+.file-tree .file { color: var(--text); }
+.file-tree .comment { color: #5c6370; }
+
+ul { margin: 12px 0 12px 24px; }
+li { margin-bottom: 6px; font-size: 0.95rem; }
+
+/* CTA */
+.guide-cta {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 40px 32px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.guide-cta h2 { font-size: 1.6rem; margin-bottom: 12px; }
+.guide-cta p { color: var(--text2); margin-bottom: 24px; }
+
+.guide-cta a {
+  display: inline-block;
+  background: var(--green);
+  color: #000;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="guide">
+
+<div class="cover">
+  <div class="cover-label">The Complete Guide</div>
+  <h1>How I Built an AI Second Brain on a <em>$200 Home Server</em></h1>
+  <p class="cover-sub">
+    Tailscale mesh VPN + Proxmox + Telegram bot + Obsidian vault. Full source code included. Step-by-step, from zero to an always-on AI assistant you can text from your phone.
+  </p>
+  <div class="cover-meta">
+    By <span>Jack Curran</span> &middot; March 2026 &middot; All code included
+  </div>
+</div>
+
+<div class="toc">
+  <h2>What's Inside</h2>
+  <ol>
+    <li>The Architecture — Why This Setup Works</li>
+    <li>Tailscale Mesh — Zero-Config VPN in 10 Minutes</li>
+    <li>Proxmox Containers — Always-On Infrastructure</li>
+    <li>The Obsidian REST API Bridge</li>
+    <li>Building the Telegram Bot (Full Code)</li>
+    <li>AI Chat with Vault Context</li>
+    <li>Systemd — Making It Bulletproof</li>
+    <li>The Stack — Complete Reference</li>
+  </ol>
+</div>
+
+<!-- CHAPTER 1 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 01</div>
+  <h2>The Architecture</h2>
+
+  <p>Most "second brain" setups die the moment you close your laptop. Your notes are local. Your automations require the machine to be awake. Your AI agents can't reach your knowledge base from anywhere else.</p>
+
+  <p>This guide solves that. By the end, you'll have:</p>
+  <ul>
+    <li>An Obsidian vault accessible from any device over a private mesh network</li>
+    <li>A Telegram bot that can read, write, and search your vault from your phone</li>
+    <li>AI chat (Gemini or Claude) that answers questions using your vault as context</li>
+    <li>Always-on infrastructure that survives reboots and laptop sleep</li>
+  </ul>
+
+  <div class="arch-diagram">
+Phone (anywhere)
+  → Telegram message
+    → Bot on Proxmox (always-on home server)
+      → Tailscale mesh VPN (encrypted)
+        → Mac (Obsidian vault + services)
+
+Components:
+┌─────────────────────────────────────────────┐
+│  MAC (Tailscale: 100.x.x.x)                │
+│  ├── Obsidian + REST API (:27124)           │
+│  ├── HTTP Proxy (:28124) ← bridges HTTPS    │
+│  └── FastAPI server (:8000) ← optional      │
+├─────────────────────────────────────────────┤
+│  PVE CONTAINER (Tailscale: 100.y.y.y)       │
+│  ├── picnic-bot (systemd)                   │
+│  │   ├── Telegram handler                   │
+│  │   ├── AI chat (Gemini/Claude)            │
+│  │   └── Vault search (pgvector)            │
+│  └── Always-on, auto-restarts               │
+└─────────────────────────────────────────────┘</div>
+
+  <div class="callout">
+    <div class="callout-title">Why not just run the bot on my Mac?</div>
+    <p>Because your Mac sleeps. The whole point is <strong>always-on access</strong>. A $200 mini PC running Proxmox uses ~15W and runs 24/7. Your bot never misses a message.</p>
+  </div>
+</div>
+
+<!-- CHAPTER 2 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 02</div>
+  <h2>Tailscale Mesh — Zero-Config VPN</h2>
+
+  <p>Tailscale creates an encrypted mesh network between your devices. No port forwarding, no firewall rules, no dynamic DNS. Each device gets a stable IP that works from anywhere.</p>
+
+  <h3>Install on Mac</h3>
+  <p>Download from <code>tailscale.com</code> or install via Homebrew:</p>
+  <pre><code>brew install tailscale
+tailscale up</code></pre>
+  <p>Sign in with your Google/GitHub account. Your Mac gets an IP like <code>100.121.35.109</code>.</p>
+
+  <h3>Install on Proxmox (LXC Container)</h3>
+  <p>Inside your container:</p>
+  <pre><code><span class="comment"># Install Tailscale</span>
+curl -fsSL https://tailscale.com/install.sh | sh
+tailscale up
+
+<span class="comment"># Verify mesh</span>
+tailscale status
+<span class="comment"># Should show both your Mac and the container</span></code></pre>
+
+  <div class="callout info">
+    <div class="callout-title">LXC Container Requirements</div>
+    <p>Your Proxmox container needs <code>nesting=1</code> and <code>keyctl=1</code> in its features for Tailscale to work. Set this in the container's options panel or in <code>/etc/pve/lxc/&lt;id&gt;.conf</code>.</p>
+  </div>
+
+  <h3>Verify Connectivity</h3>
+  <pre><code><span class="comment"># From your PVE container, ping your Mac</span>
+tailscale ping 100.121.35.109
+<span class="comment"># pong from babys-macbook-air via 192.168.0.x in 8ms</span></code></pre>
+</div>
+
+<!-- CHAPTER 3 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 03</div>
+  <h2>Proxmox Container Setup</h2>
+
+  <p>Create a lightweight Ubuntu LXC container for the bot. It needs almost nothing:</p>
+
+  <table>
+    <tr><th>Resource</th><th>Minimum</th><th>Recommended</th></tr>
+    <tr><td>vCPU</td><td>1</td><td>2</td></tr>
+    <tr><td>RAM</td><td>1 GB</td><td>2 GB</td></tr>
+    <tr><td>Disk</td><td>8 GB</td><td>16 GB</td></tr>
+    <tr><td>OS</td><td colspan="2">Ubuntu 24.04 LTS</td></tr>
+  </table>
+
+  <pre><code><span class="comment"># Inside the container — install Python</span>
+apt update && apt install -y python3-pip python3-venv git
+
+<span class="comment"># Create project directory</span>
+mkdir -p /opt/picnic-bot
+cd /opt/picnic-bot
+python3 -m venv .venv</code></pre>
+</div>
+
+<!-- CHAPTER 4 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 04</div>
+  <h2>The Obsidian REST API Bridge</h2>
+
+  <p>The Obsidian <a href="https://github.com/coddingtonbear/obsidian-local-rest-api" style="color: var(--accent)">Local REST API plugin</a> exposes your vault over HTTPS on <code>localhost:27124</code>. The problem: it uses a self-signed certificate and only listens on localhost.</p>
+
+  <p>Solution: a tiny Python HTTP proxy that bridges the gap.</p>
+
+  <h3>obsidian-proxy.py</h3>
+  <pre><code><span class="keyword">import</span> http.server, http.client, ssl
+
+<span class="keyword">class</span> ObsidianProxyHandler(http.server.BaseHTTPRequestHandler):
+    <span class="keyword">def</span> _proxy(self):
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = <span class="keyword">False</span>
+        ctx.verify_mode = ssl.CERT_NONE
+        conn = http.client.HTTPSConnection(
+            <span class="string">"127.0.0.1"</span>, 27124, context=ctx
+        )
+        length = int(self.headers.get(<span class="string">"Content-Length"</span>, 0))
+        body = self.rfile.read(length) <span class="keyword">if</span> length <span class="keyword">else</span> <span class="keyword">None</span>
+        headers = {
+            k: v <span class="keyword">for</span> k, v <span class="keyword">in</span> self.headers.items()
+            <span class="keyword">if</span> k.lower() != <span class="string">"host"</span>
+        }
+        conn.request(self.command, self.path,
+                     body=body, headers=headers)
+        resp = conn.getresponse()
+        self.send_response(resp.status)
+        <span class="keyword">for</span> k, v <span class="keyword">in</span> resp.getheaders():
+            <span class="keyword">if</span> k.lower() <span class="keyword">not in</span> (<span class="string">"transfer-encoding"</span>,):
+                self.send_header(k, v)
+        self.end_headers()
+        self.wfile.write(resp.read())
+        conn.close()
+
+    do_GET = do_PUT = do_POST = do_PATCH = do_DELETE = _proxy
+    <span class="keyword">def</span> log_message(self, *args): <span class="keyword">pass</span>
+
+httpd = http.server.HTTPServer(
+    (<span class="string">"0.0.0.0"</span>, 28124), ObsidianProxyHandler
+)
+httpd.serve_forever()</code></pre>
+
+  <h3>Make it persistent (macOS launchd)</h3>
+  <p>Save this as <code>~/Library/LaunchAgents/com.obsidian.proxy.plist</code>:</p>
+  <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;key&gt;Label&lt;/key&gt;
+    &lt;string&gt;com.obsidian.proxy&lt;/string&gt;
+    &lt;key&gt;ProgramArguments&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;/usr/bin/python3&lt;/string&gt;
+        &lt;string&gt;/path/to/obsidian-proxy.py&lt;/string&gt;
+    &lt;/array&gt;
+    &lt;key&gt;RunAtLoad&lt;/key&gt;&lt;true/&gt;
+    &lt;key&gt;KeepAlive&lt;/key&gt;&lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+
+  <pre><code>launchctl load ~/Library/LaunchAgents/com.obsidian.proxy.plist</code></pre>
+
+  <h3>Test from PVE</h3>
+  <pre><code><span class="comment"># From your Proxmox container:</span>
+curl -s http://100.121.35.109:28124/vault/ \
+  -H <span class="string">"Authorization: Bearer YOUR_API_KEY"</span>
+
+<span class="comment"># Should return JSON list of vault files</span></code></pre>
+</div>
+
+<!-- CHAPTER 5 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 05</div>
+  <h2>Building the Telegram Bot</h2>
+
+  <p>The bot is a single async Python service using <code>python-telegram-bot</code> v21+.</p>
+
+  <div class="file-tree">
+<span class="dir">picnic-bot/</span>
+  pyproject.toml
+  .env                     <span class="comment"># All secrets</span>
+  <span class="dir">picnic_bot/</span>
+    <span class="file">__init__.py</span>
+    <span class="file">main.py</span>              <span class="comment"># Entry point</span>
+    <span class="file">config.py</span>            <span class="comment"># Pydantic settings from .env</span>
+    <span class="dir">clients/</span>
+      <span class="file">obsidian.py</span>        <span class="comment"># Async vault CRUD via httpx</span>
+      <span class="file">vault_search.py</span>    <span class="comment"># Semantic search via pgvector</span>
+    <span class="dir">handlers/</span>
+      <span class="file">note.py</span>            <span class="comment"># /note — quick capture</span>
+      <span class="file">search.py</span>          <span class="comment"># /search — semantic search</span>
+      <span class="file">status.py</span>          <span class="comment"># /status — health check</span>
+      <span class="file">chat.py</span>            <span class="comment"># AI chat with vault context</span>
+    <span class="dir">telegram/</span>
+      <span class="file">bot.py</span>             <span class="comment"># Command routing</span>
+  </div>
+
+  <h3>config.py — Settings from environment</h3>
+  <pre><code><span class="keyword">from</span> pydantic_settings <span class="keyword">import</span> BaseSettings
+
+<span class="keyword">class</span> Settings(BaseSettings):
+    telegram_bot_token: str
+    owner_telegram_id: int = 0
+    obsidian_api_key: str
+    obsidian_host: str = <span class="string">"100.121.35.109"</span>
+    obsidian_port: int = 28124
+    google_api_key: str = <span class="string">""</span>
+    anthropic_api_key: str = <span class="string">""</span>
+
+    model_config = {<span class="string">"env_file"</span>: <span class="string">".env"</span>}
+
+settings = Settings()</code></pre>
+
+  <h3>clients/obsidian.py — Vault CRUD</h3>
+  <pre><code><span class="keyword">import</span> httpx
+<span class="keyword">from</span> datetime <span class="keyword">import</span> datetime
+
+<span class="keyword">class</span> ObsidianClient:
+    <span class="keyword">def</span> __init__(self, host, port, api_key):
+        self.base = f<span class="string">"http://{host}:{port}"</span>
+        self.headers = {
+            <span class="string">"Authorization"</span>: f<span class="string">"Bearer {api_key}"</span>
+        }
+
+    <span class="keyword">async def</span> create_inbox_note(self, text):
+        now = datetime.now()
+        path = f<span class="string">"inbox/{now:%Y-%m-%d_%H%M%S}.md"</span>
+        content = f<span class="string">"""---
+date: {now:%Y-%m-%d}
+type: inbox
+tags: [quick-capture, telegram]
+---
+
+{text}"""</span>
+        <span class="keyword">async with</span> httpx.AsyncClient(timeout=15) <span class="keyword">as</span> c:
+            <span class="keyword">await</span> c.put(
+                f<span class="string">"{self.base}/vault/{path}"</span>,
+                content=content,
+                headers={**self.headers,
+                         <span class="string">"Content-Type"</span>: <span class="string">"text/markdown"</span>},
+            )
+        <span class="keyword">return</span> path</code></pre>
+
+  <h3>handlers/chat.py — AI with vault context</h3>
+  <pre><code><span class="keyword">from</span> google <span class="keyword">import</span> genai
+
+<span class="keyword">async def</span> handle_chat(message, vault_search, config):
+    <span class="comment"># 1. Search vault for relevant context</span>
+    results = <span class="keyword">await</span> vault_search(message, limit=3)
+    context = <span class="string">"\n"</span>.join(
+        f<span class="string">"[[{r['file_path']}]]: {r['content'][:500]}"</span>
+        <span class="keyword">for</span> r <span class="keyword">in</span> results
+    )
+
+    <span class="comment"># 2. Call AI with vault context</span>
+    client = genai.Client(api_key=config.google_api_key)
+    response = client.models.generate_content(
+        model=<span class="string">"gemini-2.0-flash"</span>,
+        contents=f<span class="string">"Context:\n{context}\n\nQuestion: {message}"</span>,
+    )
+    <span class="keyword">return</span> response.text</code></pre>
+
+  <h3>Dependencies</h3>
+  <pre><code><span class="comment"># pyproject.toml</span>
+[project]
+dependencies = [
+    <span class="string">"python-telegram-bot>=21.0"</span>,
+    <span class="string">"httpx>=0.27"</span>,
+    <span class="string">"pydantic-settings>=2.0"</span>,
+    <span class="string">"google-genai>=1.0"</span>,    <span class="comment"># or anthropic</span>
+]</code></pre>
+
+  <pre><code><span class="comment"># Install on PVE container</span>
+cd /opt/picnic-bot
+.venv/bin/pip install -e .</code></pre>
+</div>
+
+<!-- CHAPTER 6 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 06</div>
+  <h2>AI Chat with Vault Context</h2>
+
+  <p>The magic: when you send the bot a free-text message, it searches your vault for relevant context, then sends that context + your question to an AI model. The AI answers <strong>using your own notes as knowledge</strong>.</p>
+
+  <p>For semantic search, we use Supabase pgvector with Google Gemini embeddings (768-dim). But you can swap in any embedding provider.</p>
+
+  <h3>How the search works</h3>
+  <ol>
+    <li>Your vault is chunked and embedded (one-time indexing)</li>
+    <li>Each chunk is stored in Supabase with its vector</li>
+    <li>When you search, your query is embedded and compared via cosine similarity</li>
+    <li>Top 3-5 matching chunks are returned as context</li>
+  </ol>
+
+  <div class="callout">
+    <div class="callout-title">Cost</div>
+    <p>Gemini embeddings are essentially free at small scale. Gemini Flash for chat costs ~$0.01 per response. You could run this for months on the free tier.</p>
+  </div>
+</div>
+
+<!-- CHAPTER 7 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 07</div>
+  <h2>Systemd — Making It Bulletproof</h2>
+
+  <p>The bot needs to survive container reboots, crashes, and network blips.</p>
+
+  <pre><code><span class="comment"># /etc/systemd/system/picnic-bot.service</span>
+[Unit]
+Description=AI Second Brain Bot
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/picnic-bot
+ExecStart=/opt/picnic-bot/.venv/bin/python3 -m picnic_bot.main
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+  <pre><code><span class="comment"># Enable and start</span>
+systemctl daemon-reload
+systemctl enable picnic-bot
+systemctl start picnic-bot
+
+<span class="comment"># Check status</span>
+systemctl status picnic-bot
+<span class="comment"># ● picnic-bot.service - AI Second Brain Bot</span>
+<span class="comment">#   Active: active (running)</span></code></pre>
+
+  <div class="callout info">
+    <div class="callout-title">Monitoring</div>
+    <p>View logs with <code>journalctl -u picnic-bot -f</code>. The bot logs every Telegram command and API call. If it crashes, systemd restarts it within 10 seconds.</p>
+  </div>
+</div>
+
+<!-- CHAPTER 8 -->
+<div class="section page-break">
+  <div class="section-num">Chapter 08</div>
+  <h2>The Complete Stack</h2>
+
+  <table>
+    <tr><th>Layer</th><th>Tool</th><th>Purpose</th><th>Cost</th></tr>
+    <tr><td>Knowledge</td><td>Obsidian</td><td>Second brain</td><td>Free</td></tr>
+    <tr><td>Search</td><td>Supabase pgvector</td><td>Semantic search</td><td>Free tier</td></tr>
+    <tr><td>Infra</td><td>Proxmox VE</td><td>Always-on server</td><td>$200 once</td></tr>
+    <tr><td>Network</td><td>Tailscale</td><td>Mesh VPN</td><td>Free</td></tr>
+    <tr><td>Bot</td><td>python-telegram-bot</td><td>Chat interface</td><td>Free</td></tr>
+    <tr><td>AI</td><td>Gemini Flash</td><td>Vault-aware chat</td><td>~Free</td></tr>
+    <tr><td>Process</td><td>systemd</td><td>Auto-restart</td><td>Free</td></tr>
+  </table>
+
+  <p><strong>Total recurring cost: ~$0/month.</strong> The only cost is the one-time $200 for a mini PC (or use any old computer running Linux). Everything else is free or free-tier.</p>
+
+  <h3>What you can do with this</h3>
+  <ul>
+    <li>Capture thoughts from your phone → vault inbox</li>
+    <li>Search your entire knowledge base semantically from anywhere</li>
+    <li>Ask AI questions that reference your personal notes</li>
+    <li>Run scheduled automations (cron jobs) on the server</li>
+    <li>Add Discord, Slack, or any other chat platform</li>
+    <li>Expose APIs publicly with Tailscale Funnel</li>
+  </ul>
+
+  <div class="callout">
+    <div class="callout-title">The key insight</div>
+    <p>The magic isn't any single tool. It's the connections between them. Obsidian + Tailscale = vault from anywhere. pgvector + AI = smart search. Telegram + systemd = always-on interface. Each piece is simple. The system is powerful.</p>
+  </div>
+</div>
+
+<div class="guide-cta no-print">
+  <h2>Get the source code</h2>
+  <p>Full working code, .env templates, and setup scripts included with purchase.</p>
+  <a href="https://t.me/picnicsignals">Follow for more builds →</a>
+</div>
+
+</div>
+</body>
+</html>
