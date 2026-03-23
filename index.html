@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Picnic Picks — AI-Powered NBA Props</title>
+<meta name="description" content="Machine learning NBA prop predictions. 57.1% win rate on filtered model. Free daily picks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg2: #111113;
+  --card: #16161a;
+  --border: #2a2a30;
+  --text: #e8e6e3;
+  --text2: #9a9a9e;
+  --green: #22c55e;
+  --green-dim: #16a34a;
+  --green-glow: rgba(34, 197, 94, 0.15);
+  --red: #ef4444;
+  --gold: #f59e0b;
+  --accent: #818cf8;
+  --accent-glow: rgba(129, 140, 248, 0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 80px 0;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse 8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--green-glow);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 100px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+
+h1 span { color: var(--green); }
+
+.hero-sub {
+  font-size: 1.2rem;
+  color: var(--text2);
+  max-width: 520px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease 0.3s both;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #000;
+  box-shadow: 0 0 30px var(--green-glow);
+}
+
+.btn-primary:hover {
+  background: #2dd970;
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--text2);
+  background: rgba(255,255,255,0.03);
+}
+
+/* STATS BAR */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 80px 0;
+  animation: fadeUp 0.6s ease 0.4s both;
+}
+
+.stat-item {
+  background: var(--card);
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+
+.stat-value.gold { color: var(--gold); }
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* TRACK RECORD */
+section { padding: 60px 0; }
+
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.section-desc {
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.segments-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.segment-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.segment-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green), var(--accent));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.segment-card:hover::before { opacity: 1; }
+.segment-card:hover { border-color: rgba(34, 197, 94, 0.3); }
+
+.segment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.segment-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.segment-units {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: var(--green);
+  font-size: 1rem;
+}
+
+.segment-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 100px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.segment-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--green-dim), var(--green));
+  transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.segment-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.segment-meta .win-rate { color: var(--green); font-weight: 500; }
+
+/* HOW IT WORKS */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.how-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 24px;
+}
+
+.how-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.5rem;
+  color: var(--accent);
+  opacity: 0.5;
+  margin-bottom: 16px;
+}
+
+.how-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.how-card p {
+  color: var(--text2);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* CTA SECTION */
+.cta-section {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.cta-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 60px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, var(--green-glow) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.cta-box h2 {
+  font-size: 2.8rem;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.cta-box p {
+  color: var(--text2);
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.cta-box .hero-ctas {
+  justify-content: center;
+  position: relative;
+}
+
+/* SPORTSBOOK LINKS */
+.books-section {
+  padding: 40px 0 80px;
+}
+
+.books-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.book-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.book-link:hover {
+  border-color: var(--gold);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.book-bonus {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--gold);
+}
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 0;
+  text-align: center;
+}
+
+footer p {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+
+.disclaimer {
+  font-size: 11px;
+  color: #555;
+  max-width: 700px;
+  margin: 20px auto 0;
+  line-height: 1.6;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .segments-grid { grid-template-columns: 1fr; }
+  .how-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 2.5rem; }
+  .cta-box { padding: 40px 24px; }
+}
+
+@media (max-width: 480px) {
+  .hero-ctas { flex-direction: column; }
+  .btn { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <section class="hero">
+    <div class="badge">Live Model &mdash; Updated Daily</div>
+    <h1>AI picks NBA props.<br><span>57.1% hits.</span></h1>
+    <p class="hero-sub">
+      Machine learning ensemble (XGBoost + LightGBM + Bayesian) analyzes every player prop daily. We only publish picks from segments with proven edge. Free.
+    </p>
+    <div class="hero-ctas">
+      <a href="#telegram" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Get Free Daily Picks
+      </a>
+      <a href="#guide" class="btn btn-secondary">How the model works &rarr;</a>
+    </div>
+  </section>
+</div>
+
+<div class="container">
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-value">57.1%</div>
+      <div class="stat-label">Win Rate</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">+40.5u</div>
+      <div class="stat-label">Profit (units)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value gold">445</div>
+      <div class="stat-label">Tracked Picks</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">1,193</div>
+      <div class="stat-label">Total Predictions</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <section id="track-record">
+    <div class="section-label">Track Record</div>
+    <h2>Profitable segments, real numbers.</h2>
+    <p class="section-desc">
+      We don't publish every prediction. Only picks from model segments with proven, positive expected value make it to the channel. Full transparency &mdash; every pick is tracked and graded.
+    </p>
+
+    <div class="segments-grid">
+      <div class="segment-card">
+        <div class="segment-header">
+          <div class="segment-name">Threes UNDER</div>
+          <div class="segment-units">+13.85u</div>
+        </div>
+        <div class="segment-bar-track">
+          <div class="segment-bar-fill" style="width: 62%"></div>
+        </div>
+        <div class="segment-meta">
+          <span>62&ndash;38</span>
+          <span class="win-rate">62.0%</span>
+        </div>
+      </div>
+
+      <div class="segment-card">
+        <div class="segment-header">
+          <div class="segment-name">Rebounds UNDER</div>
+          <div class="segment-units">+15.13u</div>
+        </div>
+        <div class="segment-bar-track">
+          <div class="segment-bar-fill" style="width: 58.3%"></div>
+        </div>
+        <div class="segment-meta">
+          <span>67&ndash;48</span>
+          <span class="win-rate">58.3%</span>
+        </div>
+      </div>
+
+      <div class="segment-card">
+        <div class="segment-header">
+          <div class="segment-name">Threes OVER</div>
+          <div class="segment-units">+6.68u</div>
+        </div>
+        <div class="segment-bar-track">
+          <div class="segment-bar-fill" style="width: 55.4%"></div>
+        </div>
+        <div class="segment-meta">
+          <span>41&ndash;33</span>
+          <span class="win-rate">55.4%</span>
+        </div>
+      </div>
+
+      <div class="segment-card">
+        <div class="segment-header">
+          <div class="segment-name">Points UNDER</div>
+          <div class="segment-units">+4.86u</div>
+        </div>
+        <div class="segment-bar-track">
+          <div class="segment-bar-fill" style="width: 53.8%"></div>
+        </div>
+        <div class="segment-meta">
+          <span>84&ndash;72</span>
+          <span class="win-rate">53.8%</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="container">
+  <section id="guide">
+    <div class="section-label">How It Works</div>
+    <h2>Three models. One edge.</h2>
+    <p class="section-desc">
+      Our ensemble combines XGBoost, LightGBM, and Bayesian models with live DvP rankings, usage redistribution, and Platt-calibrated probabilities.
+    </p>
+
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <h3>Data Ingestion</h3>
+        <p>Live player stats, opponent defense-vs-position rankings, minutes projections, and de-vigged odds from major books.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <h3>Ensemble Prediction</h3>
+        <p>XGBoost (35%) + LightGBM (30%) + Bayesian (35%) vote on each prop. Platt calibration corrects for model overconfidence.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <h3>Edge &amp; Sizing</h3>
+        <p>Only positive-edge picks in profitable segments are published. Quarter-Kelly sizing keeps bankroll risk controlled.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="container">
+  <section class="books-section">
+    <div style="text-align:center; margin-bottom: 24px;">
+      <div class="section-label">Tail These Picks</div>
+      <p class="section-desc" style="margin: 0 auto;">Sign up with our partner books to place your bets. New user bonuses available.</p>
+    </div>
+    <div class="books-row">
+      <a href="https://www.fanduel.com/sportsbook" class="book-link" target="_blank" rel="noopener">
+        FanDuel
+        <span class="book-bonus">Up to $200 bonus</span>
+      </a>
+      <a href="https://www.draftkings.com/sportsbook" class="book-link" target="_blank" rel="noopener">
+        DraftKings
+        <span class="book-bonus">Bet $5, Get $200</span>
+      </a>
+      <a href="https://www.betmgm.com/sports" class="book-link" target="_blank" rel="noopener">
+        BetMGM
+        <span class="book-bonus">$1,500 first bet</span>
+      </a>
+    </div>
+  </section>
+</div>
+
+<div class="container">
+  <section class="cta-section" id="telegram">
+    <div class="cta-box">
+      <h2>Get picks before tip-off.</h2>
+      <p>Free daily NBA prop picks delivered to your Telegram. Join 24 hours before everyone else.</p>
+      <div class="hero-ctas">
+        <a href="https://t.me/picnicsignals" class="btn btn-primary" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          Join Telegram Channel
+        </a>
+        <a href="#" class="btn btn-secondary">
+          Learn how I built this &rarr;
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="container">
+    <p>
+      Picnic Picks &mdash; AI-powered NBA prop predictions<br>
+      Built by <a href="#">@jcurran</a> &middot; <a href="https://t.me/picnicsignals">Telegram</a> &middot; <a href="#">Twitter/X</a>
+    </p>
+    <p class="disclaimer">
+      For entertainment purposes only. Must be 21+ and located in a state where sports betting is legal.
+      Gambling involves risk. Never bet more than you can afford to lose. Past performance does not guarantee
+      future results. Picnic Picks provides analysis, not financial advice. If you or someone you know has a
+      gambling problem, call 1-800-GAMBLER.
+    </p>
+  </div>
+</footer>
+
+<script>
+// Animate stats on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.animation = 'fadeUp 0.6s ease forwards';
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.segment-card, .how-card, .stat-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(20px)';
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>
